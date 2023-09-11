@@ -14,6 +14,34 @@ router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+
+//POST Login function
+router.post('/login', async function (req, res) {
+
+  let username = req.body.username;
+  let password = req.body.password;
+
+  const query = { username: username } //object query
+
+  const database = client.db('FYP_medApp');
+  let result = await database.collection('medApp_userProfile').findOne(query);
+  console.log("post login result:");
+  console.log(result); //userProfile
+
+  if (result.password == password) {
+    result.resultCode = 200; //success
+    console.log("login success");
+    return res.json(result);
+
+  } else {
+    console.log("login fail");
+    let result = {};
+    result.resultCode = 400; //fail
+    return res.json(result)
+  }
+
+});
+
 //GET user profile
 router.get('/user', async function (req, res) {
   const database = client.db('FYP_medApp');
@@ -22,11 +50,7 @@ router.get('/user', async function (req, res) {
   const query = { username: 'jambro0' };
 
   let result = await database.collection('medApp_userProfile').findOne(query);
-  console.log(result); //userProfile, object
-
-  //TODO1: find the user, compare the password with the password in the database
-  //TODO2: throw userProfile if the password is right; null if the password is wrong
-  //TODO3: throw error message if system error
+  console.log(result); //userProfile
 
   return res.json(result); //not res.render -- that's to render ejs file only.
 
@@ -36,15 +60,14 @@ router.get('/user', async function (req, res) {
 router.get('/medicalRecord', async function (req, res) {
   const database = client.db('FYP_medApp');
 
-  //TODO1: input = user id
+  //TODO1: pass user id in the api url -- input = user id 
   //TODO2: findOne in medical db
-  //return medical record
   const query = { medicineId: '881' };
 
   let result = await database.collection('medApp_medicalRecord').findOne(query);
   console.log(result); //medicalRecord, object
 
-  return res.json(result); 
+  return res.json(result);
 
 });
 
