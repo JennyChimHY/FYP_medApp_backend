@@ -22,13 +22,14 @@ router.post('/login', async function (req, res) {
   let password = req.body.password;
 
   const query = { username: username } //object query
+  // const query = { userID: username } //object query, using ID / email / username to search possible?
 
   const database = client.db('FYP_medApp');
   let result = await database.collection('medApp_userProfile').findOne(query);
   console.log("post login result:");
   console.log(result); //userProfile
 
-  if (result.password == password) {
+  if (result != null && result?.password == password) {
     result.resultCode = 200; //success
     console.log("login success");
     return res.json(result);
@@ -62,10 +63,12 @@ router.get('/medicalRecord', async function (req, res) {
 
   //TODO1: pass user id in the api url -- input = user id 
   //TODO2: findOne in medical db
-  const query = { medicineId: '881' };
+  const query = { medicineId: '881' }; //TODO: userID
 
   let result = await database.collection('medApp_medicalRecord').findOne(query);
   console.log(result); //medicalRecord, object
+
+  //TODO: await again, take medicine info(name..), using medicineId, from medicineRecord db
 
   return res.json(result);
 

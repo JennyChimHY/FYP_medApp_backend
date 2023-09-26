@@ -1,1 +1,8 @@
-GET http://localhost:3000/users
+GET http://localhost:3000/user
+GET http://localhost:3000/medicalRecord
+POST http://localhost:3000/login
+
+
+Connect to Android Frontend
+Git Bash
+$ ssh -p 443 -R0:localhost:3000 -L4300:localhost:4300 qr@a.pinggy.io
