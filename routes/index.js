@@ -36,7 +36,6 @@ router.post('/login', async function (req, res) {
   let password = req.body.password;
 
   const query = { username: username } //object query
-  // const query = { userID: username } //object query, using ID / email / username to search possible?
 
   const database = client.db('FYP_medApp');
   let result = await database.collection('medApp_userProfile').findOne(query);
@@ -61,26 +60,54 @@ router.post('/login', async function (req, res) {
 //GET medical record
 router.get('/medicineRecord/:userID', async function (req, res) {
   const database = client.db('FYP_medApp');
-
-
   const query = { userID: req.params.userID }; //TODO: userID
 
-  let result = await database.collection('medApp_medicineRecord').find({}).toArray();
-  console.log(result); //medicalRecord, object
+  let medinceRecord = await database.collection('medApp_medicineRecord').find(query).toArray();
+  console.log(medinceRecord); //medicalRecord, object
 
-  if(result == null){
-    let result = {};
-    result.resultCode = 404; //not found
-    return res.json(result)
-  }
-
-
+  if(medinceRecord == null) {
+    let medinceRecord = {};
+    medinceRecord.resultCode = 404; //not found
+    return res.json(medinceRecord)
+  } else {
   //TODO: await again, take medicine info(name..), using medicineId, from medicineRecord db
 
-  return res.json(result);
+    // for (let i = 0; i < medinceRecord.length; i++) {
+// 
+    // const query2 = { medicineID: medinceRecord[i].medicineID };
+    // let medicineInfo = await database.collection('medApp_medicineInfo').find(query2);
+    // console.log(medicineInfo); //medicineInfo, object
+    
+    // medinceRecord[i].medicineInfo = JSON.Stringify.parse(medicineInfo); //copy medicineInfo to medicineRecord, not pointer only
+    // }
+
+    return res.json(medinceRecord);
+  }
 
 });
 
+//GET Appointment record
+router.get('/appointmentRecord/:userID', async function (req, res) {
+  const database = client.db('FYP_medApp');
+  const query = { patientID: req.params.userID };
+
+  let appointmentRecord = await database.collection('medApp_appointmentRecord').find(query).toArray();
+
+  if (appointmentRecord.length == 0) { //if no appointment record found, check if user is a doctor
+    const query = { doctorID: req.params.userID }; 
+    appointmentRecord = await database.collection('medApp_appointmentRecord').find(query).toArray();
+  }
+
+  console.log(appointmentRecord); //medicalRecord, object
+
+  if(appointmentRecord == null) {
+    let appointmentRecord = {};
+    appointmentRecord.resultCode = 404; //not found
+  }
+  
+  return res.json(appointmentRecord);
+
+});
 
 //UPDATE user profile (later)
 
