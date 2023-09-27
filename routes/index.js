@@ -15,6 +15,20 @@ router.get('/', function (req, res, next) {
 });
 
 
+// //GET user profile
+// router.get('/user', async function (req, res) {
+//   const database = client.db('FYP_medApp');
+
+//   //query to find a username with the name "jambro0"
+//   const query = { username: 'jambro0' };
+
+//   let result = await database.collection('medApp_userProfile').findOne(query);
+//   console.log(result); //userProfile
+
+//   return res.json(result); //not res.render -- that's to render ejs file only.
+
+// });
+
 //POST Login function
 router.post('/login', async function (req, res) {
 
@@ -33,7 +47,7 @@ router.post('/login', async function (req, res) {
     result.resultCode = 200; //success
     console.log("login success");
     return res.json(result);
-
+ 
   } else {
     console.log("login fail");
     let result = {};
@@ -43,30 +57,23 @@ router.post('/login', async function (req, res) {
 
 });
 
-//GET user profile
-router.get('/user', async function (req, res) {
-  const database = client.db('FYP_medApp');
-
-  //query to find a username with the name "jambro0"
-  const query = { username: 'jambro0' };
-
-  let result = await database.collection('medApp_userProfile').findOne(query);
-  console.log(result); //userProfile
-
-  return res.json(result); //not res.render -- that's to render ejs file only.
-
-});
 
 //GET medical record
-router.get('/medicalRecord', async function (req, res) {
+router.get('/medicineRecord/:userID', async function (req, res) {
   const database = client.db('FYP_medApp');
 
-  //TODO1: pass user id in the api url -- input = user id 
-  //TODO2: findOne in medical db
-  const query = { medicineId: '881' }; //TODO: userID
 
-  let result = await database.collection('medApp_medicalRecord').findOne(query);
+  const query = { userID: req.params.userID }; //TODO: userID
+
+  let result = await database.collection('medApp_medicineRecord').find({}).toArray();
   console.log(result); //medicalRecord, object
+
+  if(result == null){
+    let result = {};
+    result.resultCode = 404; //not found
+    return res.json(result)
+  }
+
 
   //TODO: await again, take medicine info(name..), using medicineId, from medicineRecord db
 
