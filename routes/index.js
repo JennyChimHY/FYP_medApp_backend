@@ -35,7 +35,7 @@ router.post('/login', async function (req, res) {
   let username = req.body.username;
   let password = req.body.password;
 
-  const query = { username: username } //object query
+  const query = { $or: [{username: username }, {userID: username}] } //object query
 
   const database = client.db('FYP_medApp');
   let result = await database.collection('medApp_userProfile').findOne(query);
@@ -58,38 +58,74 @@ router.post('/login', async function (req, res) {
 
 
 //GET medical record
+//pipeline: array of operations, use the result of 1st operation can be used for the 2nd operation
 router.get('/medicineRecord/:userID', async function (req, res) {
   const database = client.db('FYP_medApp');
-  const query = { userID: req.params.userID }; //TODO: userID
+  const query = { userID: req.params.userID };
 
-  let medinceRecord = await database.collection('medApp_medicineRecord').find(query).toArray();
+  let pipeline = [
+    {
+      $match: query
+    },
+    {
+      $lookup: {
+        from: "medApp_medicineInfo",  //target collection
+        localField: "medicineId",     //medicineRecord field
+        foreignField: "medicineId",   //medicineInfo field
+        as: "medicineInfo"            //mapping as medicineInfo
+      }
+    },
+    {
+      $unwind: "$medicineInfo"  //pick the array out and directly insert into the object (medicineRecord)
+    }];
+
+  let medinceRecord = await database.collection('medApp_medicineRecord').aggregate(pipeline).toArray();
+
+
+  // let medinceRecord = await database.collection('medApp_medicineRecord').find(query).toArray();
   console.log(medinceRecord); //medicalRecord, object
+  if (!medinceRecord) {
+    // let medinceRecord = {};
+    return res.status(404).send('No medicine record found.');  //no need resultCode, just send error message
+  }
 
-  if(medinceRecord == null) {
-    let medinceRecord = {};
-    medinceRecord.resultCode = 404; //not found
-    return res.json(medinceRecord)
-  } else {
-  //TODO: await again, take medicine info(name..), using medicineId, from medicineRecord db
+  // if(medinceRecord == null) {
+  //   let medinceRecord = {};
+  //   medinceRecord.resultCode = 404; //not found, for safe call
+  //   return res.json(medinceRecord)
+  // } else {
 
-    // for (let i = 0; i < medinceRecord.length; i++) {
-// 
-    // const query2 = { medicineID: medinceRecord[i].medicineID };
-    // let medicineInfo = await database.collection('medApp_medicineInfo').find(query2);
-    // console.log(medicineInfo); //medicineInfo, object
-    
-    // medinceRecord[i].medicineInfo = JSON.Stringify.parse(medicineInfo); //copy medicineInfo to medicineRecord, not pointer only
-    // }
+  // //NOW TODO: await again, take medicine info(name..), using medicineId, from medicineRecord db, use the name to insert image to frontend
+  //   console.log("\n=================call 2nd api=================\n");
+
+  //   for (let i = 0; i < medinceRecord.length; i++) {
+
+  //   console.log("\n=================each medicine ID=================\n");
+
+  //   const database = client.db('FYP_medApp');
+  //   console.log(medinceRecord[i].medicineId);
+
+  //   const query2 = { medicineId: medinceRecord[i].medicineId };
+
+  //   let medicineInfo = await database.collection('medApp_medicineInfo').find(query2);
+  //   console.log(medicineInfo); //medicineInfo, object
+
+  //   //image is fetched by frontend
+  //   // medinceRecord[i].medicineInfo = JSON.Stringify.parse(medicineInfo); //copy medicineInfo to medicineRecord, not pointer only
+   
+  // }
+
+    console.log("\n=================After pipeline=================\n");
 
     return res.json(medinceRecord);
-  }
+  // }
 
 });
 
 //GET Appointment record
 router.get('/appointmentRecord/:userID', async function (req, res) {
   const database = client.db('FYP_medApp');
-  const query = { patientID: req.params.userID };
+  const query = { $or: [{ patientID: req.params.userID }, { doctorID: req.params.userID }] };
 
   let appointmentRecord = await database.collection('medApp_appointmentRecord').find(query).toArray();
 
