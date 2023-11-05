@@ -15,21 +15,8 @@ router.get('/', function (req, res, next) {
 });
 
 
-// //GET user profile
-// router.get('/user', async function (req, res) {
-//   const database = client.db('FYP_medApp');
 
-//   //query to find a username with the name "jambro0"
-//   const query = { username: 'jambro0' };
-
-//   let result = await database.collection('medApp_userProfile').findOne(query);
-//   console.log(result); //userProfile
-
-//   return res.json(result); //not res.render -- that's to render ejs file only.
-
-// });
-
-//POST Login function
+//POST Login function and fetch user profile
 router.post('/login', async function (req, res) {
 
   let username = req.body.username;
@@ -89,32 +76,6 @@ router.get('/medicineRecord/:userID', async function (req, res) {
     return res.status(404).send('No medicine record found.');  //no need resultCode, just send error message
   }
 
-  // if(medinceRecord == null) {
-  //   let medinceRecord = {};
-  //   medinceRecord.resultCode = 404; //not found, for safe call
-  //   return res.json(medinceRecord)
-  // } else {
-
-  // //NOW TODO: await again, take medicine info(name..), using medicineId, from medicineRecord db, use the name to insert image to frontend
-  //   console.log("\n=================call 2nd api=================\n");
-
-  //   for (let i = 0; i < medinceRecord.length; i++) {
-
-  //   console.log("\n=================each medicine ID=================\n");
-
-  //   const database = client.db('FYP_medApp');
-  //   console.log(medinceRecord[i].medicineId);
-
-  //   const query2 = { medicineId: medinceRecord[i].medicineId };
-
-  //   let medicineInfo = await database.collection('medApp_medicineInfo').find(query2);
-  //   console.log(medicineInfo); //medicineInfo, object
-
-  //   //image is fetched by frontend
-  //   // medinceRecord[i].medicineInfo = JSON.Stringify.parse(medicineInfo); //copy medicineInfo to medicineRecord, not pointer only
-   
-  // }
-
     console.log("\n=================After pipeline=================\n");
 
     return res.json(medinceRecord);
@@ -145,7 +106,30 @@ router.get('/appointmentRecord/:userID', async function (req, res) {
 
 });
 
-//UPDATE user profile (later)
+//GET all health data of a patient
+router.get('/healthDataRecord/:userID', async function (req, res) {
+  const database = client.db('FYP_medApp');
+  const query = { userId: req.params.userID };
+
+  let healthDataRecord = await database.collection('medApp_healthDataRecord').find(query).toArray();
+
+  console.log(healthDataRecord); //medicalRecord, object
+
+  if(healthDataRecord == null) {
+    let healthDataRecord = {};
+    healthDataRecord.resultCode = 404; //not found
+  }
+  
+  return res.json(healthDataRecord);
+
+});
+
+//GET filtered health data
+// db.users.find(
+//   { status: "A",
+//   age: 50 }
+// )
+
 
 
 module.exports = router;
