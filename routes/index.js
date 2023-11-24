@@ -7,6 +7,43 @@ const { MongoClient } = require("mongodb");
 
 const uri = "mongodb+srv://chimhoiyan:emlgEs6uzYEyJWjn@medapp.oz0x78w.mongodb.net/";
 const client = new MongoClient(uri);
+const tokenSecret = 'r2g9^!Gb4dwo5J3G';
+
+function verifyToken (req, res) {  //for all the routes that need to be verified by token
+  const bearerHeader = req.headers['authorization'];
+  if(typeof bearerHeader !== 'undefined') {
+    const bearer = bearerHeader.split(' ');
+    const bearerToken = bearer[1]; //get the token from the array
+    // req.token = bearerToken;
+
+    jwt.verify(bearerToken, tokenSecret, async (err, authData) => {
+
+      if(err) {
+        res.sendStatus(403);
+      } else {
+        // console.log("verifyToken: " + authData);
+        // req.token = authData;
+
+        const database = client.db('FYP_medApp');
+        let result = await database.collection('medApp_userProfile').findOne({username: authData.result.username, token: bearerToken});
+
+        if(result) {
+          console.log("verifyToken: " + result);
+          req.token = authData;
+          req.user = result;
+          return next();
+        }
+
+        return res.sendStatus(403);  //failed to verify token
+      }
+    });
+    
+  } else {
+    //Forbidden
+    res.sendStatus(403);
+  }
+
+}
 
 //setting up the api
 
@@ -15,7 +52,7 @@ router.get('/', function (req, res, next) {
 });
 
 
-
+const jwt = require('jsonwebtoken');
 //POST Login function and fetch user profile
 router.post('/login', async function (req, res) {
 
@@ -27,18 +64,29 @@ router.post('/login', async function (req, res) {
   const database = client.db('FYP_medApp');
   let result = await database.collection('medApp_userProfile').findOne(query);
   console.log("post login result:");
-  console.log(result); //userProfile
 
-  if (result != null && result?.password == password) {
-    result.resultCode = 200; //success
-    console.log("login success");
-    return res.json(result);
+  if (result && result.password === password) {
+   
+     // Generate JWT token and encapsulate the result into the token
+     const token = jwt.sign({ ...result }, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
+
+     let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, {$set: {token: token}});
+     if (updateTokenResult.modifiedCount == 0) {
+        console.log("update token fail");
+        return res.json({resultCode : 400});
+      }
+
+     console.log("login success");
+      
+     console.log(result); //userProfile
+
+     //result.token = token; ?????
+
+    return res.json({token : token, resultCode : 200});
  
   } else {
     console.log("login fail");
-    let result = {};
-    result.resultCode = 400; //fail
-    return res.json(result)
+    return res.json({resultCode : 400});
   }
 
 });
@@ -46,9 +94,10 @@ router.post('/login', async function (req, res) {
 
 //GET medical record
 //pipeline: array of operations, use the result of 1st operation can be used for the 2nd operation
-router.get('/medicineRecord/:userID', async function (req, res) {
+router.get('/medicineRecord', verifyToken, async function (req, res) {  //verifyToken is a middleware function
   const database = client.db('FYP_medApp');
-  const query = { userID: req.params.userID };
+  const query = { userID: req.user.userID }; //TODO: delete, replaced by token in body 
+  //  req.user vs req.body
 
   let pipeline = [
     {
@@ -83,6 +132,12 @@ router.get('/medicineRecord/:userID', async function (req, res) {
 
 });
 
+//TODO: PATCH medicine record with selfNote
+router.patch('/medicineRecordEdit/:userID', async function (req, res) {
+
+  
+});
+
 //GET Appointment record
 router.get('/appointmentRecord/:userID', async function (req, res) {
   const database = client.db('FYP_medApp');
@@ -106,7 +161,8 @@ router.get('/appointmentRecord/:userID', async function (req, res) {
 
 });
 
-//GET all health data of a patient
+//GET all health data of a patient 
+//TODO: Window scanning -- take a peroid of time, (and get the average of the data)
 router.get('/healthDataRecord/:userID', async function (req, res) {
   const database = client.db('FYP_medApp');
   const query = { userId: req.params.userID };
