@@ -136,7 +136,7 @@ router.patch('/medicineRecordEdit/:userID', async function (req, res) {
 });
 
 //GET Appointment record
-router.get('/appointmentRecord/:userID', async function (req, res) {
+router.get('/appointmentRecord/:userID', verifyToken, async function (req, res) {
   const database = client.db('FYP_medApp');
   const query = { $or: [{ patientID: req.params.userID }, { doctorID: req.params.userID }] };
 
@@ -160,7 +160,7 @@ router.get('/appointmentRecord/:userID', async function (req, res) {
 
 //GET all health data of a patient 
 //TODO: Window scanning -- take a peroid of time, (and get the average of the data)
-router.get('/healthDataRecord/:userID', async function (req, res) {
+router.get('/healthDataRecord/:userID', verifyToken, async function (req, res) {
   const database = client.db('FYP_medApp');
   const query = { userId: req.params.userID };
 
