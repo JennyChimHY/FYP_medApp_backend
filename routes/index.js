@@ -9,38 +9,32 @@ const uri = "mongodb+srv://chimhoiyan:emlgEs6uzYEyJWjn@medapp.oz0x78w.mongodb.ne
 const client = new MongoClient(uri);
 const tokenSecret = 'r2g9^!Gb4dwo5J3G';
 
-function verifyToken (req, res) {  //for all the routes that need to be verified by token
+async function verifyToken(req, res, next) {  //for all the routes that need to be verified by token
   const bearerHeader = req.headers['authorization'];
-  if(typeof bearerHeader !== 'undefined') {
+  if (typeof bearerHeader !== 'undefined') {
     const bearer = bearerHeader.split(' ');
     const bearerToken = bearer[1]; //get the token from the array
     // req.token = bearerToken;
 
-    jwt.verify(bearerToken, tokenSecret, async (err, authData) => {
+    //compare token with the token in the database (single login)
+    let authData = jwt.verify(bearerToken, tokenSecret)
 
-      if(err) {
-        res.sendStatus(403);
-      } else {
-        // console.log("verifyToken: " + authData);
-        // req.token = authData;
+    console.log(authData);
+    // console.log("verifyToken: " + authData);
+    // req.token = authData;
 
-        const database = client.db('FYP_medApp');
-        let result = await database.collection('medApp_userProfile').findOne({username: authData.result.username, token: bearerToken});
+    const database = client.db('FYP_medApp');
+    let result = await database.collection('medApp_userProfile').findOne({ username: authData.username, token: bearerToken });
 
-        if(result) {
-          console.log("verifyToken: " + result);
-          req.token = authData;
-          req.user = result;
-          return next();
-        }
+    if (result) {
+      console.log("verifyToken: " + result);
+      req.token = authData;
+      req.user = result;
+      return next();
+    }
 
-        return res.sendStatus(403);  //failed to verify token
-      }
-    });
-    
-  } else {
-    //Forbidden
-    res.sendStatus(403);
+    return res.sendStatus(403);  //failed to verify token
+
   }
 
 }
@@ -59,34 +53,37 @@ router.post('/login', async function (req, res) {
   let username = req.body.username;
   let password = req.body.password;
 
-  const query = { $or: [{username: username }, {userID: username}] } //object query
+  const query = { $or: [{ username: username }, { userID: username }] } //object query
 
   const database = client.db('FYP_medApp');
   let result = await database.collection('medApp_userProfile').findOne(query);
   console.log("post login result:");
 
   if (result && result.password === password) {
-   
-     // Generate JWT token and encapsulate the result into the token
-     const token = jwt.sign({ ...result }, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
 
-     let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, {$set: {token: token}});
-     if (updateTokenResult.modifiedCount == 0) {
-        console.log("update token fail");
-        return res.json({resultCode : 400});
-      }
+    delete result.token; //delete token in the result
 
-     console.log("login success");
-      
-     console.log(result); //userProfile
+    // Generate JWT token and encapsulate the result into the token
+    const token = jwt.sign({ ...result }, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
 
-     //result.token = token; ?????
+    //update token in database
+    let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, { $set: { token: token } });
+    if (updateTokenResult.modifiedCount == 0) {
+      console.log("update token fail");
+      return res.json({ resultCode: 400 });
+    }
 
-    return res.json({token : token, resultCode : 200});
- 
+    console.log("login success");
+
+    console.log(result); //userProfile
+
+    //result.token = token; ?????
+
+    return res.json({ token: token, resultCode: 200 });
+
   } else {
     console.log("login fail");
-    return res.json({resultCode : 400});
+    return res.json({ resultCode: 400 });
   }
 
 });
@@ -94,7 +91,7 @@ router.post('/login', async function (req, res) {
 
 //GET medical record
 //pipeline: array of operations, use the result of 1st operation can be used for the 2nd operation
-router.get('/medicineRecord', verifyToken, async function (req, res) {  //verifyToken is a middleware function
+router.get('/medicineRecord/:userID', verifyToken, async function (req, res) {  //verifyToken is a middleware function
   const database = client.db('FYP_medApp');
   const query = { userID: req.user.userID }; //TODO: delete, replaced by token in body 
   //  req.user vs req.body
@@ -125,9 +122,9 @@ router.get('/medicineRecord', verifyToken, async function (req, res) {  //verify
     return res.status(404).send('No medicine record found.');  //no need resultCode, just send error message
   }
 
-    console.log("\n=================After pipeline=================\n");
+  console.log("\n=================After pipeline=================\n");
 
-    return res.json(medinceRecord);
+  return res.json(medinceRecord);
   // }
 
 });
@@ -135,7 +132,7 @@ router.get('/medicineRecord', verifyToken, async function (req, res) {  //verify
 //TODO: PATCH medicine record with selfNote
 router.patch('/medicineRecordEdit/:userID', async function (req, res) {
 
-  
+
 });
 
 //GET Appointment record
@@ -146,17 +143,17 @@ router.get('/appointmentRecord/:userID', async function (req, res) {
   let appointmentRecord = await database.collection('medApp_appointmentRecord').find(query).toArray();
 
   if (appointmentRecord.length == 0) { //if no appointment record found, check if user is a doctor
-    const query = { doctorID: req.params.userID }; 
+    const query = { doctorID: req.params.userID };
     appointmentRecord = await database.collection('medApp_appointmentRecord').find(query).toArray();
   }
 
   console.log(appointmentRecord); //medicalRecord, object
 
-  if(appointmentRecord == null) {
+  if (appointmentRecord == null) {
     let appointmentRecord = {};
     appointmentRecord.resultCode = 404; //not found
   }
-  
+
   return res.json(appointmentRecord);
 
 });
@@ -171,11 +168,11 @@ router.get('/healthDataRecord/:userID', async function (req, res) {
 
   console.log(healthDataRecord); //medicalRecord, object
 
-  if(healthDataRecord == null) {
+  if (healthDataRecord == null) {
     let healthDataRecord = {};
     healthDataRecord.resultCode = 404; //not found
   }
-  
+
   return res.json(healthDataRecord);
 
 });
