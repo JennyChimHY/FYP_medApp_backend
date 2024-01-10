@@ -177,10 +177,13 @@ router.get('/healthDataRecord/:userID', verifyToken, async function (req, res) {
 //post health data: Add health data
 router.post('/addHealthDataRecord', verifyToken, async function (req, res) {
   const database = client.db('FYP_medApp');
-  const query = { userId: req.params.userID };
+  // const query = { userId: req.params.userID };
+
+  console.log(req.body);
 
   let healthDataRecord = await database.collection('medApp_healthDataRecord').insertOne(req.body);
 
+  console.log("healthDataRecord"); //medicalRecord, object
   console.log(healthDataRecord); //medicalRecord, object
 
   if (healthDataRecord == null) {
