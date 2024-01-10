@@ -188,10 +188,10 @@ router.post('/addHealthDataRecord', verifyToken, async function (req, res) {
 
   if (addhealthDataRecordResult == null) {
     let addhealthDataRecordResult = {};
-    healthDataRecord.resultCode = 404; //not found
+    addhealthDataRecordResult.resultCode = 404; //not found
   }
 
-  return res.json(healthDataRecord); //return the inserted data?
+  return res.json(addhealthDataRecordResult); //return the inserted data?
 
 });
 
