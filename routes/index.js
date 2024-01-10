@@ -114,18 +114,14 @@ router.get('/medicineRecord/:userID', verifyToken, async function (req, res) {  
 
   let medinceRecord = await database.collection('medApp_medicineRecord').aggregate(pipeline).toArray();
 
-
-  // let medinceRecord = await database.collection('medApp_medicineRecord').find(query).toArray();
   console.log(medinceRecord); //medicalRecord, object
   if (!medinceRecord) {
-    // let medinceRecord = {};
     return res.status(404).send('No medicine record found.');  //no need resultCode, just send error message
   }
 
   console.log("\n=================After pipeline=================\n");
 
   return res.json(medinceRecord);
-  // }
 
 });
 
@@ -160,6 +156,7 @@ router.get('/appointmentRecord/:userID', verifyToken, async function (req, res) 
 
 //GET all health data of a patient 
 //TODO: Window scanning -- take a peroid of time, (and get the average of the data)
+//TODO*******: sort date
 router.get('/healthDataRecord/:userID', verifyToken, async function (req, res) {
   const database = client.db('FYP_medApp');
   const query = { userId: req.params.userID };
@@ -176,6 +173,26 @@ router.get('/healthDataRecord/:userID', verifyToken, async function (req, res) {
   return res.json(healthDataRecord);
 
 });
+
+//post health data: Add health data
+router.post('/addHealthDataRecord', verifyToken, async function (req, res) {
+  const database = client.db('FYP_medApp');
+  const query = { userId: req.params.userID };
+
+  let healthDataRecord = await database.collection('medApp_healthDataRecord').insertOne(req.body);
+
+  console.log(healthDataRecord); //medicalRecord, object
+
+  if (healthDataRecord == null) {
+    let healthDataRecord = {};
+    healthDataRecord.resultCode = 404; //not found
+  }
+
+  return res.json(healthDataRecord); //return the inserted data?
+
+});
+
+//put health data: Edit health data
 
 //GET filtered health data
 // db.users.find(
