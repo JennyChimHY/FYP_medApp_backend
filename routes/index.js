@@ -181,13 +181,13 @@ router.post('/addHealthDataRecord', verifyToken, async function (req, res) {
 
   console.log(req.body);
 
-  let healthDataRecord = await database.collection('medApp_healthDataRecord').insertOne(req.body);
+  let addhealthDataRecordResult = await database.collection('medApp_healthDataRecord').insertOne(req.body);
 
-  console.log("healthDataRecord"); //medicalRecord, object
-  console.log(healthDataRecord); //medicalRecord, object
+  console.log("addhealthDataRecordResult"); //medicalRecord, object
+  console.log(addhealthDataRecordResult); //medicalRecord, object
 
-  if (healthDataRecord == null) {
-    let healthDataRecord = {};
+  if (addhealthDataRecordResult == null) {
+    let addhealthDataRecordResult = {};
     healthDataRecord.resultCode = 404; //not found
   }
 
