@@ -4,6 +4,7 @@ var router = express.Router();
 
 //setting up the database
 const { MongoClient } = require("mongodb");
+var ObjectId = require('mongodb').ObjectId;
 
 const uri = "mongodb+srv://chimhoiyan:emlgEs6uzYEyJWjn@medapp.oz0x78w.mongodb.net/";
 const client = new MongoClient(uri);
@@ -19,7 +20,7 @@ async function verifyToken(req, res, next) {  //for all the routes that need to 
     //compare token with the token in the database (single login)
     let authData = jwt.verify(bearerToken, tokenSecret)
 
-    console.log(authData);
+    // console.log(authData);
     // console.log("verifyToken: " + authData);
     // req.token = authData;
 
@@ -27,7 +28,7 @@ async function verifyToken(req, res, next) {  //for all the routes that need to 
     let result = await database.collection('medApp_userProfile').findOne({ username: authData.username, token: bearerToken });
 
     if (result) {
-      console.log("verifyToken: " + result);
+      // console.log("verifyToken: " + result);
       req.token = authData;
       req.user = result;
       return next();
@@ -192,6 +193,27 @@ router.post('/addHealthDataRecord', verifyToken, async function (req, res) {
   }
 
   return res.json(addhealthDataRecordResult); //return the inserted data?
+
+});
+
+//delete health data: Delete health data  TODO modifyyyyyyyyyyyyyyy
+router.delete('/deleteHealthDataRecord/:recordID', verifyToken, async function (req, res) {
+  const database = client.db('FYP_medApp');
+  const query = { _id: new ObjectId(req.params.recordID) };
+
+  console.log("query");
+  console.log(query);
+
+  let deleteHealthDataRecordResult = await database.collection("medApp_healthDataRecord").deleteOne(query) //findOneAndDelete
+
+
+  console.log("deleteHealthDataRecordResult"); //medicalRecord, object
+  console.log(deleteHealthDataRecordResult); //medicalRecord, object
+
+  if (deleteHealthDataRecordResult == null) {
+    let deleteHealthDataRecordResult = {};
+    deleteHealthDataRecordResult.resultCode = 404; //not found
+  }
 
 });
 
