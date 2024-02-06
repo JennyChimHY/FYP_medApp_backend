@@ -89,6 +89,24 @@ router.post('/login', async function (req, res) {
 
 });
 
+//GET patient profile in caregiver mode
+router.get('/user/:userID', verifyToken, async function (req, res) {
+  const database = client.db('FYP_medApp');
+  const query = { userID: req.params.userID };
+
+  let patientProfile = await database.collection('medApp_userProfile').findOne(query);
+
+  console.log(patientProfile); //userProfile
+
+  if (patientProfile == null) {
+    let patientProfile = {};
+    patientProfile.resultCode = 404; //not found
+  }
+
+  return res.json(patientProfile);
+
+});
+
 
 //GET medical record
 //pipeline: array of operations, use the result of 1st operation can be used for the 2nd operation
