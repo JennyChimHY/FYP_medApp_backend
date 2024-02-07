@@ -107,27 +107,28 @@ router.post('/login', async function (req, res) {
 
 });
 
-//GET patient profile in caregiver mode, 
-//verify token using caregive own token
-//NO verifyToken, but compare the caregiver ID with the patient connection HERE?
-router.get('/user/:userID', verifyToken, async function (req, res) {
-  const database = client.db('FYP_medApp');
-  const query = { userID: req.params.userID };
+//OLD, now using pipeline in login
+// //GET patient profile in caregiver mode, 
+// //verify token using caregive own token
+// //NO verifyToken, but compare the caregiver ID with the patient connection HERE?
+// router.get('/user/:userID', verifyToken, async function (req, res) {
+//   const database = client.db('FYP_medApp');
+//   const query = { userID: req.params.userID };
 
-  let patientProfile = await database.collection('medApp_userProfile').findOne(query);
+//   let patientProfile = await database.collection('medApp_userProfile').findOne(query);
 
-  //handle jwt security measure
+//   //handle jwt security measure
 
-  console.log(patientProfile); //userProfile
+//   console.log(patientProfile); //userProfile
 
-  if (patientProfile == null) {
-    let patientProfile = {};
-    patientProfile.resultCode = 404; //not found
-  }
+//   if (patientProfile == null) {
+//     let patientProfile = {};
+//     patientProfile.resultCode = 404; //not found
+//   }
 
-  return res.json(patientProfile);
+//   return res.json(patientProfile);
 
-});
+// });
 
 
 //GET medical record
