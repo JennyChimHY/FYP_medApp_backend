@@ -46,26 +46,46 @@ router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-
 const jwt = require('jsonwebtoken');
+
 //POST Login function and fetch user profile
 router.post('/login', async function (req, res) {
-
+  const database = client.db('FYP_medApp');
   let username = req.body.username;
   let password = req.body.password;
 
   const query = { $or: [{ username: username }, { userID: username }] } //object query
 
-  const database = client.db('FYP_medApp');
-  let result = await database.collection('medApp_userProfile').findOne(query);
-  console.log("post login result:");
+  //pipeline result to get the connected patient's profile
+  //joint record store inside the same json result
+  //i.e. patientConnection: [{patientID: "123", patientName: "abc", patientProfile: {patientProfile obj arr WITHOUT patient connection}}]
+  //Frontend UI: store in global login info directly
 
-  if (result && result.password === password) {
+  let pipeline = [
+    {
+      $match: query
+    },
+    {
+      $lookup: {
+        from: "medApp_userProfile",  //target collection
+        localField: "patientConnection.patientID",     //caregiver's patient connection field
+        foreignField: "userID",   //caregiver's ID field
+        as: "patientProfileList"      //mapping as patientProfileList
+      }
+    }];
+
+  // let result = await database.collection('medApp_userProfile').findOne(query);
+  let result = await database.collection('medApp_userProfile').aggregate(pipeline).toArray();
+
+  // console.log("post login result:\n", result);
+  // console.log("post login result:\n", result[0].patientProfileList);
+
+   if (result && result[0].password === password) {
 
     delete result.token; //delete token in the result
 
     // Generate JWT token and encapsulate the result into the token
-    const token = jwt.sign({ ...result }, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
+    const token = jwt.sign({ ...result[0] }, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
 
     //update token in database
     let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, { $set: { token: token } });
@@ -76,9 +96,7 @@ router.post('/login', async function (req, res) {
 
     console.log("login success");
 
-    console.log(result); //userProfile
-
-    //result.token = token; ?????
+    console.log(result[0]); //userProfile
 
     return res.json({ token: token, resultCode: 200 });
 
@@ -89,12 +107,16 @@ router.post('/login', async function (req, res) {
 
 });
 
-//GET patient profile in caregiver mode
+//GET patient profile in caregiver mode, 
+//verify token using caregive own token
+//NO verifyToken, but compare the caregiver ID with the patient connection HERE?
 router.get('/user/:userID', verifyToken, async function (req, res) {
   const database = client.db('FYP_medApp');
   const query = { userID: req.params.userID };
 
   let patientProfile = await database.collection('medApp_userProfile').findOne(query);
+
+  //handle jwt security measure
 
   console.log(patientProfile); //userProfile
 
