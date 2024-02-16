@@ -146,7 +146,10 @@ router.get('/patientProfileList', verifyToken, async function (req, res) {
 //pipeline: array of operations, use the result of 1st operation can be used for the 2nd operation
 router.get('/medicineRecord/:userID', verifyToken, async function (req, res) {  //verifyToken is a middleware function
   const database = client.db('FYP_medApp');
-  const query = { userID: req.user.userID }; //TODO: delete, replaced by token in body 
+
+  console.log("userID: " + req.params.userID); //userID
+
+  const query = { userID: req.params.userID }; //req.user.userID from verifyToken
   //  req.user vs req.body
 
   let pipeline = [
