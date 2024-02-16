@@ -72,20 +72,53 @@ router.post('/login', async function (req, res) {
         foreignField: "userID",   //caregiver's ID field
         as: "patientProfileList"      //mapping as patientProfileList
       }
-    }];
+    }, 
+    {
+      $project: {
+        _id: 1,
+        "userID": 1,
+        "firstName": 1,
+        "lastName": 1,
+        "gender": 1,
+        "age": 1,
+        "dob": 1,
+        "username": 1,
+        "email": 1,
+        "password": 1,
+        "userRole": 1,
+        "patientConnection": 1,
+        "token": 1,
+        "patientProfileList": {
+          _id: 1,
+          "userID": 1,
+          "firstName": 1,
+          "lastName": 1,
+          "gender": 1,
+          "age": 1,
+          "dob": 1,
+          "username": 1,
+          "email": 1,
+          "password": 1
+        },
+      }
+    }
+  ];
 
   // let result = await database.collection('medApp_userProfile').findOne(query);
   let result = await database.collection('medApp_userProfile').aggregate(pipeline).toArray();
 
-  // console.log("post login result:\n", result);
+  console.log("post login result:\n", result);
   // console.log("post login result:\n", result[0].patientProfileList);
 
-   if (result && result[0].password === password) {
+  if (result && result[0].password === password) {
 
     delete result.token; //delete token in the result
 
     // Generate JWT token and encapsulate the result into the token
-    const token = jwt.sign({ ...result[0] }, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
+    const token = jwt.sign({ 
+      _id: result[0]._id,
+      
+     }, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
 
     //update token in database
     let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, { $set: { token: token } });
@@ -98,7 +131,7 @@ router.post('/login', async function (req, res) {
 
     console.log(result[0]); //userProfile
 
-    return res.json({ token: token, resultCode: 200 });
+    return res.json({ token: token, resultCode: 200 }); //token; resultCode, userProfile
 
   } else {
     console.log("login fail");
