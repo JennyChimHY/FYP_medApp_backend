@@ -22,7 +22,6 @@ async function verifyToken(req, res, next) {  //for all the routes that need to 
 
     // console.log(authData);
     // console.log("verifyToken: " + authData);
-    // req.token = authData;
 
     const database = client.db('FYP_medApp');
     let result = await database.collection('medApp_userProfile').findOne({ username: authData.username, token: bearerToken });
@@ -56,10 +55,43 @@ router.post('/login', async function (req, res) {
 
   const query = { $or: [{ username: username }, { userID: username }] } //object query
 
-  //pipeline result to get the connected patient's profile
-  //joint record store inside the same json result
-  //i.e. patientConnection: [{patientID: "123", patientName: "abc", patientProfile: {patientProfile obj arr WITHOUT patient connection}}]
-  //Frontend UI: store in global login info directly
+  let result = await database.collection('medApp_userProfile').findOne(query);
+
+  console.log("post login result:\n", result);
+
+  if (result && result.password === password) {
+
+    delete result.token; //delete token in the result
+
+    // Generate JWT token and encapsulate the result into the token
+    const token = jwt.sign({...result}, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
+
+    //update token in database
+    let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, { $set: { token: token } });
+    if (updateTokenResult.modifiedCount == 0) {
+      console.log("update token fail");
+      return res.json({ resultCode: 400 });
+    }
+
+    console.log("login success");
+    console.log(result); //userProfile
+
+    return res.json({ token: token, resultCode: 200 }); //token; resultCode, userProfile
+
+  } else {
+    console.log("login fail");
+    return res.json({ resultCode: 400 });
+  }
+});
+
+
+//GET patient profile in caregiver mode, 
+//verify token using caregive own token
+//verified token will store user info in req.user
+router.get('/patientProfileList', verifyToken, async function (req, res) {
+  const database = client.db('FYP_medApp');
+  
+  const query = { userID: req.user.userID };
 
   let pipeline = [
     {
@@ -77,17 +109,6 @@ router.post('/login', async function (req, res) {
       $project: {
         _id: 1,
         "userID": 1,
-        "firstName": 1,
-        "lastName": 1,
-        "gender": 1,
-        "age": 1,
-        "dob": 1,
-        "username": 1,
-        "email": 1,
-        "password": 1,
-        "userRole": 1,
-        "patientConnection": 1,
-        "token": 1,
         "patientProfileList": {
           _id: 1,
           "userID": 1,
@@ -104,64 +125,21 @@ router.post('/login', async function (req, res) {
     }
   ];
 
-  // let result = await database.collection('medApp_userProfile').findOne(query);
-  let result = await database.collection('medApp_userProfile').aggregate(pipeline).toArray();
+  let patientProfile = await database.collection('medApp_userProfile').aggregate(pipeline).toArray();
 
-  console.log("post login result:\n", result);
-  // console.log("post login result:\n", result[0].patientProfileList);
+  //handle jwt security measure?
+  console.log("patientProfile");
+  console.log(patientProfile[0]); //userProfile
+  console.log(patientProfile[0].patientProfileList); //userProfile
 
-  if (result && result[0].password === password) {
-
-    delete result.token; //delete token in the result
-
-    // Generate JWT token and encapsulate the result into the token
-    const token = jwt.sign({ 
-      _id: result[0]._id,
-      
-     }, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
-
-    //update token in database
-    let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, { $set: { token: token } });
-    if (updateTokenResult.modifiedCount == 0) {
-      console.log("update token fail");
-      return res.json({ resultCode: 400 });
-    }
-
-    console.log("login success");
-
-    console.log(result[0]); //userProfile
-
-    return res.json({ token: token, resultCode: 200 }); //token; resultCode, userProfile
-
-  } else {
-    console.log("login fail");
-    return res.json({ resultCode: 400 });
+  if (patientProfile[0] == null) {
+    let patientProfile = {};
+    patientProfile.resultCode = 404; //not found
   }
 
+  return res.json(patientProfile[0]);
+
 });
-
-//OLD, now using pipeline in login
-// //GET patient profile in caregiver mode, 
-// //verify token using caregive own token
-// //NO verifyToken, but compare the caregiver ID with the patient connection HERE?
-// router.get('/user/:userID', verifyToken, async function (req, res) {
-//   const database = client.db('FYP_medApp');
-//   const query = { userID: req.params.userID };
-
-//   let patientProfile = await database.collection('medApp_userProfile').findOne(query);
-
-//   //handle jwt security measure
-
-//   console.log(patientProfile); //userProfile
-
-//   if (patientProfile == null) {
-//     let patientProfile = {};
-//     patientProfile.resultCode = 404; //not found
-//   }
-
-//   return res.json(patientProfile);
-
-// });
 
 
 //GET medical record
