@@ -215,7 +215,7 @@ router.get('/appointmentRecord/:userID', verifyToken, async function (req, res) 
 //TODO*******: sort date
 router.get('/healthDataRecord/:userID', verifyToken, async function (req, res) {
   const database = client.db('FYP_medApp');
-  const query = { userId: req.params.userID };
+  const query = { userID: req.params.userID };
 
   let healthDataRecord = await database.collection('medApp_healthDataRecord').find(query).toArray();
 
@@ -233,7 +233,6 @@ router.get('/healthDataRecord/:userID', verifyToken, async function (req, res) {
 //post health data: Add health data
 router.post('/addHealthDataRecord', verifyToken, async function (req, res) {
   const database = client.db('FYP_medApp');
-  // const query = { userId: req.params.userID };
 
   console.log(req.body);
 
@@ -293,6 +292,24 @@ router.post('/addLocationRecord', verifyToken, async function (req, res) {
   }
 
   return res.json(addLocationRecordResult); //return the inserted data?
+
+});
+
+//get location data: get location record
+router.get('/getlocationRecord/:userID', verifyToken, async function (req, res) {
+  const database = client.db('FYP_medApp');
+  const query = { userID: req.params.userID };
+
+  let locationRecord = await database.collection('medApp_locationRecord').find(query).toArray();
+
+  console.log(locationRecord); //medicalRecord, object
+
+  if (locationRecord == null) {
+    let locationRecord = {};
+    locationRecord.resultCode = 404; //not found
+  }
+
+  return res.json(locationRecord);
 
 });
 
