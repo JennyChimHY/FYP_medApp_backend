@@ -239,7 +239,7 @@ router.post('/addHealthDataRecord', verifyToken, async function (req, res) {
 
   let addhealthDataRecordResult = await database.collection('medApp_healthDataRecord').insertOne(req.body);
 
-  console.log("addhealthDataRecordResult"); //medicalRecord, object
+  console.log("addhealthDataRecordResult");
   console.log(addhealthDataRecordResult); //medicalRecord, object
 
   if (addhealthDataRecordResult == null) {
@@ -263,7 +263,7 @@ router.delete('/deleteHealthDataRecord/:recordID', verifyToken, async function (
 
 
   console.log("deleteHealthDataRecordResult"); //medicalRecord, object
-  console.log(deleteHealthDataRecordResult); //medicalRecord, object
+  console.log(deleteHealthDataRecordResult); 
 
   if (deleteHealthDataRecordResult == null) {
     let deleteHealthDataRecordResult = {};
@@ -272,7 +272,31 @@ router.delete('/deleteHealthDataRecord/:recordID', verifyToken, async function (
 
 });
 
-//put health data: Edit health data
+//put health data: Edit health data  //not created
+
+//post location data: add location record
+router.post('/addLocationRecord', verifyToken, async function (req, res) {
+  const database = client.db('FYP_medApp');
+  // const query = { userId: req.params.userID };
+
+  console.log(req.body);
+
+  //to be modified
+  let addLocationRecordResult = await database.collection('medApp_locationRecord').insertOne(req.body);
+
+  console.log("addLocationRecordResult");
+  console.log(addLocationRecordResult);
+
+  if (addLocationRecordResult == null) {
+    let addLocationRecordResult = {};
+    addLocationRecordResult.resultCode = 404;
+  }
+
+  return res.json(addLocationRecordResult); //return the inserted data?
+
+});
+
+
 
 //GET filtered health data
 // db.users.find(
