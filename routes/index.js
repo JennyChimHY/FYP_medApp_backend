@@ -187,10 +187,10 @@ router.patch('/medicineRecordEdit/:userID', async function (req, res) {
 
 });
 
-//GET Appointment record
-router.get('/appointmentRecord/:userID', verifyToken, async function (req, res) {
+//GET Appointment record by userID or appointID
+router.get('/appointmentRecord/:userAppointID', verifyToken, async function (req, res) {
   const database = client.db('FYP_medApp');
-  const query = { $or: [{ patientID: req.params.userID }, { doctorID: req.params.userID }] };
+  const query = { $or: [{ patientID: req.params.userAppointID }, { doctorID: req.params.userAppointID }, {appointID: req.params.userAppointID}] };
 
   let appointmentRecord = await database.collection('medApp_appointmentRecord').find(query).toArray();
 
