@@ -210,6 +210,31 @@ router.get('/appointmentRecord/:userAppointID', verifyToken, async function (req
 
 });
 
+//PUT update patient apply appointment record
+router.put('/patientApplyAppointment/:appointID', verifyToken, async function (req, res) {
+
+  console.log("Enter PUT patientApplyAppointment");
+
+  const database = client.db('FYP_medApp');
+  const query = { appointID: req.body.appointID };
+  const update = { $set: { appointUpdateDateTime: req.body.appointUpdateDateTime, doctorUpdateStatus: req.body.doctorUpdateStatus } };  //partial update
+
+  let updateAppointmentRecord = await database.collection('medApp_appointmentRecord').updateOne(query, update);
+
+  console.log(updateAppointmentRecord); //medicalRecord, object
+
+  if (updateAppointmentRecord == null) {
+    let updateAppointmentRecord = {};
+    updateAppointmentRecord.resultCode = 404; //not found
+  }
+
+  return res.json(updateAppointmentRecord);
+
+});
+
+
+
+
 //GET all health data of a patient 
 //TODO: Window scanning -- take a peroid of time, (and get the average of the data)
 //TODO*******: sort date
