@@ -233,6 +233,49 @@ router.put('/patientApplyAppointment/:appointID', verifyToken, async function (r
 });
 
 
+//PUT update doctor approve appointment record
+router.put('/doctorApproveAppointment/:appointID', verifyToken, async function (req, res) {
+
+  console.log("Enter PUT doctorApproveAppointment");
+
+  //method 2: string from frontend only
+  // await findOne
+  // if approve / reject
+  // await updateOne
+
+  console.log("update appoint info");
+  console.log(req.body.appointID);
+  console.log(req.body.appointUpdateDateTime);
+  console.log(req.body.doctorUpdateStatus);
+
+
+  const database = client.db('FYP_medApp');
+  const query = { appointID: req.params.appointID };
+  let update = { $set: { doctorUpdateStatus: "Initialize" } };  //partial update
+
+  if (req.body.doctorUpdateStatus == "Approved") { //approve
+    update = { $set: { appointDateTime: req.body.appointUpdateDateTime, appointTimestamp: req.body.appointUpdateTimestamp, appointUpdateDateTime: null, appointUpdateTimestamp: 0, doctorUpdateStatus: req.body.doctorUpdateStatus } };  //partial update
+  } else { //reject
+    update = { $set: { appointUpdateDateTime: null, appointUpdateTimestamp: 0, doctorUpdateStatus: req.body.doctorUpdateStatus } };  //partial update
+  }
+  
+
+  //TODO update failed for appoint date time
+
+  let updateAppointmentRecord = await database.collection('medApp_appointmentRecord').updateOne(query, update);
+
+  console.log(updateAppointmentRecord); //medicalRecord, object
+
+  if (updateAppointmentRecord == null) {
+    let updateAppointmentRecord = {};
+    updateAppointmentRecord.resultCode = 404; //not found
+  }
+
+  return res.json(updateAppointmentRecord);
+
+});
+
+
 
 
 //GET all health data of a patient 
