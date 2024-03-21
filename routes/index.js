@@ -52,6 +52,7 @@ router.post('/login', async function (req, res) {
   const database = client.db('FYP_medApp');
   let username = req.body.username;
   let password = req.body.password;
+  let patientFCM_token = req.body.patientFCM_token;
 
   const query = { $or: [{ username: username }, { userID: username }] } //object query
 
@@ -67,7 +68,7 @@ router.post('/login', async function (req, res) {
     const token = jwt.sign({...result}, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
 
     //update token in database
-    let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, { $set: { token: token } });
+    let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, { $set: { token: token, patientFCM_token: patientFCM_token } });
     if (updateTokenResult.modifiedCount == 0) {
       console.log("update token fail");
       return res.json({ resultCode: 400 });
