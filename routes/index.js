@@ -383,6 +383,67 @@ router.get('/getlocationRecord/:userID', verifyToken, async function (req, res) 
 });
 
 
+//POST Firebase Cloud Messaging
+router.post('/sendFirebaseNotificationToCloud', verifyToken, async function (req, res) {
+
+  //1. fetch patientFCM_token from database, query by patientID
+  //2. send notification setting to the cloud server
+  
+  const database = client.db('FYP_medApp');
+  const query = { userID: req.body.patientID };
+
+  let result = await database.collection('medApp_userProfile').findOne(query);
+
+  if (result == null) {
+    let result = {};
+    result.resultCode = 404; //not found
+
+    console.log("FAILED post login result:\n", result);
+
+    return res.json(result);
+  }
+
+  console.log("post login result:\n", result);
+  console.log("post login result patientFCM_token:\n", result.patientFCM_token);
+
+
+  //make a post request to the firebase cloud messaging server
+
+  console.log(req.body);
+
+  let patientFCM_token = result.patientFCM_token;
+
+//https://fcm.googleapis.com/fcm/send
+//body: json from https://firebase.google.com/docs/cloud-messaging/http-server-ref 
+
+let cloudMessage = {
+  "to" : patientFCM_token,  // device's registration token
+  "priority" : "high",
+  "notification" : {
+                    "title" : req.body.notificationStatus,
+                    "body" : req.body.notificationMsg
+   }
+ }
+
+  console.log(cloudMessage);
+
+  const fetch = require('node-fetch');
+  fetch('https://fcm.googleapis.com/fcm/send', {
+    method: 'POST',
+    body: JSON.stringify(cloudMessage),
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'key=AAAA5Lb6kdU:APA91bFXx4JCPUCdS97AyYyX4KU7lB0J0lVqiP4scbgYEptcgE-GvOHpCPE2sri34fME9JYXfkLw1k3JKQh_P3N7aj27pP44fR2qUTn757Z6XBnciZPUhBVNa85IThe4tXf7DP7PrmTK' },
+  })
+    .then(res => res.json())
+    .then(json => console.log(json));
+
+  console.log("FCM after sending to cloud, post login result:\n", result);
+
+  console.log(res.json(result));
+
+  return res.json(result);
+
+});
+
 
 //GET filtered health data
 // db.users.find(
