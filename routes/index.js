@@ -394,7 +394,7 @@ router.post('/sendFirebaseNotificationToCloud', verifyToken, async function (req
 
   let result = await database.collection('medApp_userProfile').findOne(query);
 
-  if (result == null) {
+  if (result == null || !result.patientFCM_token) {
     let result = {};
     result.resultCode = 404; //not found
 
@@ -417,7 +417,7 @@ router.post('/sendFirebaseNotificationToCloud', verifyToken, async function (req
 //body: json from https://firebase.google.com/docs/cloud-messaging/http-server-ref 
 
 let cloudMessage = {
-  "to" : patientFCM_token,  // device's registration token
+  "to" : patientFCM_token,  // patient device's registration token
   "priority" : "high",
   "notification" : {
                     "title" : req.body.notificationStatus,
@@ -427,18 +427,16 @@ let cloudMessage = {
 
   console.log(cloudMessage);
 
-  const fetch = require('node-fetch');
-  fetch('https://fcm.googleapis.com/fcm/send', {
+  const fetch = require('node-fetch'); //node version < 18.0
+  let fcmRes = await fetch('https://fcm.googleapis.com/fcm/send', {
     method: 'POST',
     body: JSON.stringify(cloudMessage),
     headers: { 'Content-Type': 'application/json', 'Authorization': 'key=AAAA5Lb6kdU:APA91bFXx4JCPUCdS97AyYyX4KU7lB0J0lVqiP4scbgYEptcgE-GvOHpCPE2sri34fME9JYXfkLw1k3JKQh_P3N7aj27pP44fR2qUTn757Z6XBnciZPUhBVNa85IThe4tXf7DP7PrmTK' },
   })
-    .then(res => res.json())
-    .then(json => console.log(json));
+
+  result = await fcmRes.json();
 
   console.log("FCM after sending to cloud, post login result:\n", result);
-
-  console.log(res.json(result));
 
   return res.json(result);
 
