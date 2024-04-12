@@ -10,18 +10,15 @@ const uri = "mongodb+srv://chimhoiyan:emlgEs6uzYEyJWjn@medapp.oz0x78w.mongodb.ne
 const client = new MongoClient(uri);
 const tokenSecret = 'r2g9^!Gb4dwo5J3G';
 
-async function verifyToken(req, res, next) {  //for all the routes that need to be verified by token
+//for all the routes that need to be verified by token
+async function verifyToken(req, res, next) {  
   const bearerHeader = req.headers['authorization'];
   if (typeof bearerHeader !== 'undefined') {
     const bearer = bearerHeader.split(' ');
     const bearerToken = bearer[1]; //get the token from the array
-    // req.token = bearerToken;
 
     //compare token with the token in the database (single login)
     let authData = jwt.verify(bearerToken, tokenSecret)
-
-    // console.log(authData);
-    // console.log("verifyToken: " + authData);
 
     const database = client.db('FYP_medApp');
     let result = await database.collection('medApp_userProfile').findOne({ username: authData.username, token: bearerToken });
@@ -65,10 +62,11 @@ router.post('/login', async function (req, res) {
     delete result.token; //delete token in the result
 
     // Generate JWT token and encapsulate the result into the token
-    const token = jwt.sign({...result}, tokenSecret, { expiresIn: '24h' });  //... take the json 1 level outter
+    const token = jwt.sign({...result}, tokenSecret, { expiresIn: '24h' });  
 
     //update token in database
-    let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, { $set: { token: token, patientFCM_token: patientFCM_token } });
+    let updateTokenResult = await database.collection('medApp_userProfile').updateOne(query, { 
+      $set: { token: token, patientFCM_token: patientFCM_token } });
     if (updateTokenResult.modifiedCount == 0) {
       console.log("update token fail");
       return res.json({ resultCode: 400 });
@@ -182,11 +180,11 @@ router.get('/medicineRecord/:userID', verifyToken, async function (req, res) {  
 
 });
 
-//TODO: PATCH medicine record with selfNote
-router.patch('/medicineRecordEdit/:userID', async function (req, res) {
+// //TODO: PATCH medicine record with selfNote
+// router.patch('/medicineRecordEdit/:userID', async function (req, res) {
 
 
-});
+// });
 
 //GET Appointment record by userID or appointID
 router.get('/appointmentRecord/:userAppointID', verifyToken, async function (req, res) {
