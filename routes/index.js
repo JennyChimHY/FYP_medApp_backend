@@ -6,9 +6,9 @@ var router = express.Router();
 const { MongoClient } = require("mongodb");
 var ObjectId = require('mongodb').ObjectId;
 
-const uri = "mongodb+srv://chimhoiyan:emlgEs6uzYEyJWjn@medapp.oz0x78w.mongodb.net/";
+const uri = "mongodb+srv://chimhoiyan:******.mongodb.net/";
 const client = new MongoClient(uri);
-const tokenSecret = 'r2g9^!Gb4dwo5J3G';
+const tokenSecret = '******';  //hidden for security measure
 
 //for all the routes that need to be verified by token
 async function verifyToken(req, res, next) {  
@@ -429,7 +429,7 @@ let cloudMessage = {
   let fcmRes = await fetch('https://fcm.googleapis.com/fcm/send', {
     method: 'POST',
     body: JSON.stringify(cloudMessage),
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'key=AAAA5Lb6kdU:APA91bFXx4JCPUCdS97AyYyX4KU7lB0J0lVqiP4scbgYEptcgE-GvOHpCPE2sri34fME9JYXfkLw1k3JKQh_P3N7aj27pP44fR2qUTn757Z6XBnciZPUhBVNa85IThe4tXf7DP7PrmTK' },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'key='******' }
   })
 
   result = await fcmRes.json();
